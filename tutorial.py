@@ -16,7 +16,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
 """
 ### Tutorial Documentation
 Documentation that goes along with the Airflow tutorial located
@@ -27,6 +26,7 @@ from datetime import timedelta
 import airflow
 from airflow import DAG
 from airflow.operators.bash_operator import BashOperator
+from airflow.operators import python_operator
 
 # These args will get passed on to each operator
 # You can override them on a per-task basis during operator initialization
@@ -100,4 +100,18 @@ t3 = BashOperator(
     dag=dag,
 )
 
-t1 >> [t2, t3]
+# extending the above example code here
+
+
+def my_func(*args, **kwargs):
+    import pdb
+    pdb.set_trace()
+
+
+t4 = python_operator.PythonOperator(
+    task_id='my_func_task_id',
+    provide_context=True,
+    python_callable=my_func,
+    dag=dag)
+
+t1 >> [t2, t3, t4]
