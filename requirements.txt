@@ -1,0 +1,8 @@
+apache-airflow
+
+# testing
+pytest
+
+# dev
+jupyter
+notebook

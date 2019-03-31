@@ -21,29 +21,7 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
 
 
-def get_logger(module):
-    """
-    Returns a configured standard library `logger`
-
-    Args:
-        module (__name__) of the client code calling this function
-    """
-    logger = logging.getLogger(module)
-    logger.setLevel(logging.INFO)
-
-    # create a logging format
-    formatter = logging.Formatter(
-        '%(asctime)s - %(filename)s:%(lineno)d - %(funcName)s - %(levelname)s - %(message)s')
-
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.ERROR)
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-    return logger
-
-
-logger = get_logger(__name__)
+logger = utils.get_logger(__name__)
 
 
 default_args = {
