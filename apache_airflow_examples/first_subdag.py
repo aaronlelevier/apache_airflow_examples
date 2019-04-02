@@ -9,9 +9,8 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.operators.python_operator import PythonOperator
 
-import utils
 
-logger = utils.get_logger(__name__)
+DAG_NAME = 'first_subdag'
 
 ONE_DAY_AGO = datetime.timedelta(days=1)
 
@@ -20,7 +19,6 @@ FIVE_MINUTES = datetime.timedelta(minutes=5)
 # dir to check for files in
 BASE_DIR = os.path.join(os.path.expanduser('~'), 'data/coco/annotations')
 
-FILENAME_2 = 'captions_train2020.json'
 
 def filename_if_exists(filename):
     f = os.path.join(BASE_DIR, filename)
@@ -36,8 +34,13 @@ def filename_if_exists(filename):
     print 'ret:', ret
 
 
-def bool_if_file_exists(f):
-    return os.path.isfile(f)
+def bool_if_file_exists(filename):
+    f = os.path.join(BASE_DIR, filename)
+
+    if os.path.isfile(f):
+        print 'exists'
+    else:
+        print 'does not exist'
 
 
 def subdag_log_filename_if_exists(parent_dag_name, child_dag_name, default_args, filename):
@@ -47,19 +50,23 @@ def subdag_log_filename_if_exists(parent_dag_name, child_dag_name, default_args,
     )
 
     PythonOperator(
-        task_id=child_dag_name,
+        task_id=child_dag_name+'.1',
         default_args=default_args,
         python_callable=filename_if_exists,
         op_args=[filename],
         dag=dag_subdag,
     )
 
+    PythonOperator(
+        task_id=child_dag_name+'.2',
+        default_args=default_args,
+        python_callable=bool_if_file_exists,
+        op_args=[filename],
+        dag=dag_subdag,
+    )
+
     return dag_subdag
 
-
-DAG_NAME = 'first_subdag'
-
-FILENAME = __file__
 
 default_args = {
     'owner': 'airflow',
@@ -95,10 +102,18 @@ section_1 = SubDagOperator(
     dag=dag,
 )
 
+section_2 = SubDagOperator(
+    task_id='section-2',
+    subdag=subdag_log_filename_if_exists(
+        DAG_NAME, 'section-2', default_args, 'bad-filename.json'),
+    default_args=default_args,
+    dag=dag,
+)
+
 end = DummyOperator(
     task_id='end',
     default_args=default_args,
     dag=dag,
 )
 
-start >> section_1 >> end
+start >> section_1 >> section_2 >> end
