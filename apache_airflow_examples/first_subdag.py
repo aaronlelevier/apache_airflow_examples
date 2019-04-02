@@ -17,26 +17,30 @@ ONE_DAY_AGO = datetime.timedelta(days=1)
 
 FIVE_MINUTES = datetime.timedelta(minutes=5)
 
+# dir to check for files in
+BASE_DIR = os.path.join(os.path.expanduser('~'), 'data/coco/annotations')
 
-def filename_if_exists(**kwargs):
-    logger.info('kwargs: %s', kwargs)
+FILENAME_2 = 'captions_train2020.json'
 
-    f = kwargs.get('f')
+def filename_if_exists(filename):
+    f = os.path.join(BASE_DIR, filename)
 
-    if not os.path.isfile(f):
+    print 'f:', f
+
+    if f and not os.path.isfile(f):
         ret = 'NOTHING'
+    else:
+        name, _ = os.path.splitext(os.path.basename(f))
+        ret = name
 
-    name, _ = os.path.splitext(os.path.basename(f))
-    ret = name
-
-    logger.info('ret: %s', ret)
+    print 'ret:', ret
 
 
 def bool_if_file_exists(f):
     return os.path.isfile(f)
 
 
-def subdag_log_filename_if_exists(parent_dag_name, child_dag_name, args, **kwargs):
+def subdag_log_filename_if_exists(parent_dag_name, child_dag_name, args, filename):
     dag_subdag = DAG(
         dag_id='%s.%s' % (parent_dag_name, child_dag_name),
         default_args=args,
@@ -46,6 +50,7 @@ def subdag_log_filename_if_exists(parent_dag_name, child_dag_name, args, **kwarg
         task_id=child_dag_name,
         default_args=args,
         python_callable=filename_if_exists,
+        op_args=[filename],
         dag=dag_subdag,
     )
 
@@ -84,7 +89,8 @@ start = DummyOperator(
 
 section_1 = SubDagOperator(
     task_id='section-1',
-    subdag=subdag_log_filename_if_exists(DAG_NAME, 'section-1', args),
+    subdag=subdag_log_filename_if_exists(
+        DAG_NAME, 'section-1', args, 'captions_train2014.json'),
     default_args=args,
     dag=dag,
 )
