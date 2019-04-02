@@ -40,15 +40,15 @@ def bool_if_file_exists(f):
     return os.path.isfile(f)
 
 
-def subdag_log_filename_if_exists(parent_dag_name, child_dag_name, args, filename):
+def subdag_log_filename_if_exists(parent_dag_name, child_dag_name, default_args, filename):
     dag_subdag = DAG(
         dag_id='%s.%s' % (parent_dag_name, child_dag_name),
-        default_args=args,
+        default_args=default_args,
     )
 
     PythonOperator(
         task_id=child_dag_name,
-        default_args=args,
+        default_args=default_args,
         python_callable=filename_if_exists,
         op_args=[filename],
         dag=dag_subdag,
@@ -61,7 +61,7 @@ DAG_NAME = 'first_subdag'
 
 FILENAME = __file__
 
-args = {
+default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'start_date': airflow.utils.dates.days_ago(2),
@@ -83,21 +83,21 @@ dag = DAG(
 
 start = DummyOperator(
     task_id='start',
-    default_args=args,
+    default_args=default_args,
     dag=dag,
 )
 
 section_1 = SubDagOperator(
     task_id='section-1',
     subdag=subdag_log_filename_if_exists(
-        DAG_NAME, 'section-1', args, 'captions_train2014.json'),
-    default_args=args,
+        DAG_NAME, 'section-1', default_args, 'captions_train2014.json'),
+    default_args=default_args,
     dag=dag,
 )
 
 end = DummyOperator(
     task_id='end',
-    default_args=args,
+    default_args=default_args,
     dag=dag,
 )
 
