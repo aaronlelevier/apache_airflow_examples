@@ -66,6 +66,36 @@ retrieve_magic_number = PythonOperator(
     dag=dag,
 )
 
+def push_data_func(**context):
+    print(context)
+    context['task_instance'].xcom_push(
+        key='execution_id',
+        value='foobar'
+    )
+
+push_data = PythonOperator(
+    task_id='push_data',
+    default_args=default_args,
+    python_callable=push_data_func,
+    provide_context=True,
+    dag=dag
+)
+
+def pull_data_func(**context):
+    value = context['task_instance'].xcom_pull(
+        key='execution_id',
+        task_ids='push_data'
+    )
+    print 'manual xcom_pull value: ', value
+
+pull_data = PythonOperator(
+    task_id='pull_data',
+    default_args=default_args,
+    python_callable=pull_data_func,
+    provide_context=True,
+    dag=dag
+)
+
 end = DummyOperator(
     task_id='end',
     default_args=default_args,
@@ -73,4 +103,4 @@ end = DummyOperator(
 )
 
 
-start >> send_magic_number >> retrieve_magic_number >> end
+start >> send_magic_number >> retrieve_magic_number >> push_data >> pull_data >> end
